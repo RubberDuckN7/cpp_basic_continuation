@@ -10,84 +10,189 @@
   For example:
 
   ```c++
-  int max(int a, b)
+  void printIntegerValue(int value)
   {
-    return b < a ? a : b;
+    cout << endl << value << endl;
   }
   ```
-
+  
+  This function can only print one type, which is int.
   To cover different types but with same functionality, that's where templates comes in.
   
   ```c++
-  template<typename T>
-  T max(T a, T b)
+  template<typename DataType>
+  void genericPrinting(DataType genericValue)
   {
-    return b < a ? a : b;
+    cout << endl << genericValue << endl;
   }
   ```
 
-  Keyword "template" will tell that the function or class will be generic and then declared typename or class inside <> can
+  Keyword "template" will tell that the function or class will be generic and then
+  declared typename or class inside <> can
   can be used to indicate that a type can generic.
 
-  From this, one type can be generic, the T just is used to identify a type.
-  template<typename T>
+  From this, one type can be generic, the DataType just is used to identify a type.
+  template<typename DataType>, DataType can be renamed to anything that is more suitable.
 
-  The T can be any name, it does not matter, but typename keyword is needed.
-  
-    When calling a function with typename T, compiler deduces type of T, by
+  When calling a function with typename DataType, compiler deduces type of DataType, by
   looking at what value was passed to it.
   
-  For each different type of function call with typname T, there will be generated
+  For each different type of function call with typname DataType, there will be generated
   a copy of that function at compiletime.
-  
-  Example:
+
+  Example, for previous function _genericPrinting, calling this function with different
+  arguments, 
   
   ```c++
-  template<typename T>
-  void print(T value) { ... }
-  
-  print("Hello");
-  print(10);
+  genericPrinting("Hello");
+  genericPrinting(10);
+  ```
   
   This will generate both functions:
   
-  void print(std::string value) { ... }
-  void print(int value) { ... }
+  ```c++
+  void genericPrinting(std::string value) { ... }
+  void genericPrinting(int value) { ... }
   ```
   
-  Small note about default arguments, the type cannot be deduced.
+  _Note: typename is used most of the time, but previously, class could also be used, like this:
+  ```c++
+  template<class DataType>
+  void olderVariantofGenericPrinting(DataType genericValue)
+  {
+    cout << endl << genericValue << endl;
+  }
+  ```
+  It doesn't mean that only classes can be passed, it was (and still is valid) to introduce a
+  type parameter.
+  
+  _Note: Templates support default arguments, but default arguments can't be use to deduce type.
   For example, consider this function.
   
   ```c++
-  template<typename T>
-  void print(T value = "")
+  template<typename DataType>
+  void genericPrinting(DataType genericValue = "Empty")
   {
-     std::cout << value << std::endl;
+    cout << endl << genericValue << endl;
   }
+  
+  genericPrinting("This is fine"); // Fine
+  genericPrinting(9999); // Is totally fine as well
+  genericPrinting(); // Error!
+  
+  // Something along the lines of:
+  .... couldn't infer template argument 'DataType ...
   ```
   
-  When using function like this:
-  print("Hello");
-  The type T will be deduced to std::string, while
-  print();
-  will not be able to deduce from default argument, thus, will result in an error.
+  Deducing return type [C++11] Let's look at the horrors first before tasting some fine wine...
   
-  # TODO: Explain about return type deduction.
-
+  There is a way to let compiler deduce return type, and in C++11, and that is to use decltype.
+  Downside is that part of function code has to be included, to be able to decide the type.
+  For example, look at this (stolen) code:
+  
+  ```c++
+  template<typename LeftType, typename RightType>
+  auto sumValues(LeftType leftValue, RightType rightValue) -> decltype(leftValue + rightValue)
+  {
+    return leftValue + rightValue;
+  }
+ 
+  sumValues(2.1f, 3); // Type will be deduced to float
+  ```
+  
+  TODO: Expand on this, by decay / common type.
+  
+  _Note: There is another way to skip decltype, deducing return type! [C++14 specific] So beware!
+  
+  Since C++ 14, auto is supported for return types! How to? Here:
+  
+  ```C++
+  // Okay, my imagination ended here, one is for float/double other is for short / long
+  template<typename ExactValueType, typename RoundedDataType>
+  auto sumDifferentTypes(ExactValueType exactValue, RoundedDataType roundedValue)
+  {
+    return exactValue + roundedValue;
+  }
+  
+  sumDifferentTypes(1.2f, 20); // return type will be deduced to float.
+  ```
+  
+  _Note: If... there are multiple return types, the type of return types must match,
+  otherwise there will be error!  
+  
+  _TODO: Explain about two phase instantioation ?
+   will they even care about it? (Ask the people!)
+  
 ## Multiple arguments
 
   Template can also support multiple types, and can be used like this.
-  template<typename A, typename B>
-  void print(A a, B b) { ... }
+  
+  ```c++
+  template<typename PrefixType, typename PrintedValueType>
+  void print(PrefixType prefix, PrintedValueType value) 
+  {
+     cout << prefix << " : " << value << endl;
+  }
+  
+  print("Seconds", 40);
+  ```
 
-  Each type A and B can be different.
+  Each type PrefixType and PrintedValueType can be different.
 
   To have multiple arguments, there is another way to create, than
-  declare all parameters manually.
+  declare all parameters manually. Reason? Can be many! For example, instead
+  of creating many different functions with different number of parameters or
+  having one function that covers them with default values. (oh right, default values, scroll up!)
   
-  Template declaration will look like this: 
+  TODO: Find a little better reasons, current ones: [This section is in dire need of expansion]
+   * Macros, hard to debug (but so are templates!).
+   * Multiple calls with initialize, start and end, ... kinda too much work.
+   * Only one type for all arguments.
+    
+  There are va_* macros, that reside in stdarg.h (or cstdarg.h depends where you are, geographically)
+  These are built to accept multiple arguments.
   
-  template<typename... Ts>
+  From cplusplus.com/reference/cstdarg/va_arg
+  [Stolen code]
+  
+  ```c++
+  int findMax(int numberOfArgs, ...)
+  {
+    int indexOfArg, currentValue, largestSoFar;
+    
+    va_list vl;
+    va_start(vl, numberOfArgs);
+    largest = va_arg(vl, int);
+    
+    for (indexOfArg = 1; indexOfArg < n; indexOfArg++)
+    {
+      currentValue = va_arg(vl,int);
+      largest = (largest>val)?largest:val;
+    }
+    va_end(vl);
+    return largest;
+  }
+  
+  int main ()
+  {
+    cout << FindMax (7,702,422,631,834,892,104,772); // will print: 892
+    return 0;
+  }
+  ```
+  
+  TODO: ´Replace this / Insert explanation of this.
+  va_list <- holds info about arguments, and prepares for va_arg calls
+  
+  va_start <- prepares va_list, (it is passed as first argument)
+  to be able to retreive information about arguments.
+  
+  va_arg <- modifies parameter, (va_list) so that call to va_arg, retreives next argument
+  in the list.
+  
+  Template can also be used to handle multiple arguments, but with that, also be able to handle
+  different types! Declaration will look like this: 
+  
+  template<typename... DataTypes>
   ... indicates that the function can accept multiple parameters, and even
   be of different type.
   
@@ -98,13 +203,13 @@
   How this look like:
   
   ```c++
-  template<typename T>
-  void print(T t)
+  template<typename PrintableType>
+  void print(PrintableType value)
   {
-      cout << "End " << t << endl;
+      cout << "End " << value << endl;
   }
     
-  template<typename T, typename... Types>
+  template<typename T, typename... DataTypes>
   void print(T firstArg, Types... args)
   {
     cout << "Cout " << firstArg << endl;
