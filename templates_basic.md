@@ -19,7 +19,7 @@
   This function can only print one type, which is int.
   To cover different types but with same functionality, that's where templates comes in.
   
-  ```c++
+  ```C++
   template<typename DataType>
   void genericPrinting(DataType genericValue)
   {
@@ -40,7 +40,7 @@
   For each different type of function call with typname DataType, there will be generated
   a copy of that function at compiletime.
 
-  Example, for previous function _genericPrinting, calling this function with different
+  Example, for previous function genericPrinting, calling this function with different
   arguments, 
   
   ```c++
@@ -55,7 +55,7 @@
   void genericPrinting(int value) { ... }
   ```
   
-  _Note: typename is used most of the time, but previously, class could also be used, like this:
+  * **Note**: typename is used most of the time, but previously, class could also be used, like this:
   ```c++
   template<class DataType>
   void olderVariantofGenericPrinting(DataType genericValue)
@@ -66,7 +66,10 @@
   It doesn't mean that only classes can be passed, it was (and still is valid) to introduce a
   type parameter.
   
-  _Note: Templates support default arguments, but default arguments can't be use to deduce type.
+  ##### Exercise 1: template_exercises/1_exercise_basic_function.cpp
+  Go there and read the instructions (in the comments)
+  
+  * **Note**: Templates support default arguments, but default arguments can't be use to deduce type.
   For example, consider this function.
   
   ```c++
@@ -83,6 +86,17 @@
   // Something along the lines of:
   .... couldn't infer template argument 'DataType ...
   ```
+
+  ##### Exercise 2: template_exercises/2_exercise_basic_function_multiple.cpp
+  Okay, might as well throw in another one here.
+  
+  It is possible to also explicitly specify the desired type for
+  a template, in the usage.
+  
+  ```c++
+    genericPrinting<float>(10.23f);
+  ```
+  Specifying different type than parameter, would result in compilation error.
   
   Deducing return type [C++11] Let's look at the horrors first before tasting some fine wine...
   
@@ -102,7 +116,7 @@
   
   TODO: Expand on this, by decay / common type.
   
-  _Note: There is another way to skip decltype, deducing return type! [C++14 specific] So beware!
+  * **Note**: There is another way to skip decltype, deducing return type! [C++14 specific] So beware!
   
   Since C++ 14, auto is supported for return types! How to? Here:
   
@@ -117,12 +131,12 @@
   sumDifferentTypes(1.2f, 20); // return type will be deduced to float.
   ```
   
-  _Note: If... there are multiple return types, the type of return types must match,
+  * **Note**: If... there are multiple return types, the type of return types must match,
   otherwise there will be error!  
   
   _TODO: Explain about two phase instantioation ?
    will they even care about it? (Ask the people!)
-  
+
 ## Multiple arguments
 
   Template can also support multiple types, and can be used like this.
@@ -148,6 +162,10 @@
    * Macros, hard to debug (but so are templates!).
    * Multiple calls with initialize, start and end, ... kinda too much work.
    * Only one type for all arguments.
+   * va_arguments are resolved at runtime.
+   * templates are pre-generated at compile-time!
+   
+  This is an example of how to use VA_arguments, but, don't use them for the exercise!
     
   There are va_* macros, that reside in stdarg.h (or cstdarg.h depends where you are, geographically)
   These are built to accept multiple arguments.
@@ -223,6 +241,38 @@
   
   Once the arguments are being unpacked until end, then it is reaching end,
   and ending the recursion.
+  
+  In case you have a question, why two functions? well, to start and end recursion!
+  
+  How about test the same code? as an exercise?
+  ##### Exercise 3: template_exercises/3_exercise_still_basics_parameters.cpp.cpp
 
+## Specialization
+  As functions can be used with template, so can classes.
+  
+  Simply declare class by:
+  ```C++
+  template<typename DataType>
+  class MyPrivateDataHolder
+  {
+  public:
+  
+  private:
+    DataType genericNameForData;
+  
+  public:
+    DataType get() { return genericNameForData; }
+    void set(DataType value) { this->genericNameForData = value; }
+  };
+
+  MyPrivateDataHolder<int> dataStorage;
+  ```
+
+  Now, the MyPrivateDataHolder will hold any type that is specified, but,
+  there is also a way to handle specific types in such class.
+  2.5
 
 ## Patterns
+
+
+
