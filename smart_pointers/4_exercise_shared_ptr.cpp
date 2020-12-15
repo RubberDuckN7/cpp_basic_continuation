@@ -4,25 +4,41 @@
 
 using namespace std;
 
-// Okay, a simple example, but let's pretend like this: A key sits on a ring and in
-// a way, "has a ring", but a key ring has a key.
-class Key
+// Here is exercise, two "participants" want to use a debugger.
+// Normally, it can be solved with any pointer really, but the POINT of this,
+// is that to just write something and pass shared_ptr as arguments.
+
+// TODO: Rewrite this, so that there will not be any new / delete, but will still be dynamically
+// allocated.
+
+class PrintingDebugger
 {
-  public:
-    Key() { cout << endl << "Creating key" << endl; }
-	~Key() { cout << endl << "Destroying key" << endl; }
+public:
+  PrintingDebugger() { cout << endl << "Creating PrintingDebugger" << endl; }
+  ~PrintingDebugger() { cout << endl << "Deleting PrintingDebugger" << endl; }
+
+  void PrintMessage(string message) { cout << "Printing fancy message: " << message << endl; }
 };
 
-class KeyRing
+void PersonOneWantsDebugger(PrintingDebugger * debugger)
 {
-  public:
-    KeyRing() { cout << endl << "Creating key ring" << endl; }
-	~KeyRing() { cout << endl << "Destroying key ring" << endl; }
-};
+  debugger->PrintMessage("Person one using debugger");
+}
 
-void 
+void PersonTwoWantsDebugger(PrintingDebugger* debugger)
+{
+  debugger->PrintMessage("Person two using debugger");
+}
 
 int main()
 {
-  
+  PrintingDebugger* debugger = new PrintingDebugger();
+
+  PersonOneWantsDebugger(debugger);
+  PersonTwoWantsDebugger(debugger);
+
+  return 0;
+
+  // Oooh right... forgot that this will never happen :|
+  delete debugger;
 }
