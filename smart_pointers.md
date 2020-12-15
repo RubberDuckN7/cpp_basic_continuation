@@ -104,39 +104,144 @@
    - delete []
   
 ## Simple cases - Short version
-  There are different smart pointers:
+  Smart pointer is a wrapper for holding the allocated memory and being
+  an smarter owner of it. Also, include <memory>, to use them!
+  
+  There are different smart pointers, with short descriptions:
+   This can only have one owner. That means only one real copy of unique_ptr.
+   It will release allocated data, once the variable (or owner) is set to NULL / 0.
+   - unique_ptr
+   
+   Difference between unique and shared, is that shared can be assigned to different owners,
+   and keep track of "how many owners" it can have.
+   If all the copies will be set to NULL / 0, the reference count will be zero, and at this point,
+   data will be released.
+   - shared_ptr 
 
+   This type of pointer is holding a reference to a shared_ptr, without "owning" it,
+   without increasing reference counter.
+   
+   Weak pointer is used for 2 reasons:
+    1: Use the object only if it exists.
+       weak_ptr.lock() returns a shared_ptr to manage the referenced object.
+	2: If 2 objects, A and B, are shared_ptrs, and they point to eachother,
+	   they will not be 0, and if no other pointer will point to them,
+	   that would create memory leak.
+	   Here is better explanation about this: https://www.learncpp.com/cpp-tutorial/15-7-circular-dependency-issues-with-stdshared_ptr-and-stdweak_ptr/
+   - weak_ptr 
 
-  For far superior explanation:
-
+   Unique pointer usage.
   ```C++
-#include <iostream>
-#include <string>
-
-#include <memory>
-
-using namespace std;
-
-int main()
-{
-  unique_ptr<int> smartInt = make_unique<int>(10);
-  shared_ptr<int> smartSharedInt = make_shared<int>(20);
+  // This is how to create one.
+  unique_ptr<int> onlyOneOwner = make_unique<int>(10);
   
+  cout << "Old owner: " << *onlyOneOwner << endl;
   
-  weak_ptr<int> weakButSmartInt = smartSharedInt;
+  // This is how to copy it into another owner.
+  auto changeUniqueOwner = move(onlyOneOwner);
   
-  cout << *smartInt << endl;
-  cout << *smartSharedInt << endl;
-  
-  auto sp = weakButSmartInt.lock();
-  
-  cout << *sp << endl;
-  
-  //cout << *weakButSmartInt << endl;
-}  
+  if(onlyOneOwner) {
+    cout << "Still alive??: " << *onlyOneOwner << endl;  
+  }
+  else {
+    cout << "New proud owner of int: " << *changeUniqueOwner << endl;
+  }
   ```
   
+  From above, first unique_ptr is created by function "make_unique", and then pass in value in constructor.
+  
+  DO NOT USE THIS: unique_ptr someObject(new int(10));
+  Even if people write this in examples everywhere, it is double dynamic allocations... Not sure what that means?
+  It is very slow :)
+  (PS: Catapult anyone who creates a smart pointer this way)
 
-## Different ways
-
-## Exercises
+  Shared pointer.
+  
+  Shared pointers release memory only when reference count is reaching zero.
+  Here is an example on how to create and release smart pointer.
+  Note that creating smart pointers, there are functions for that: make_unique and make_shared.
+  
+  ```C++
+  class PrintAtDestructor
+  {
+    public:
+      PrintAtDestructor() { cout << "Creating PrintAtDestructor" << endl; }
+      ~PrintAtDestructor() { cout << "Deleting PrintAtDestructor"<< endl; }
+  };
+  
+  int main()
+  {
+    cout << "Creating first shared pointer" << endl;
+    shared_ptr<PrintAtDestructor> ownerOne = make_shared<PrintAtDestructor>();
+    
+    cout << "Creating second owner" << endl;
+    shared_ptr<PrintAtDestructor> ownerTwo = ownerOne;
+    
+    cout<< "Setting ownerOne to null" << endl;
+    ownerOne = nullptr;
+    
+    cout << "Setting ownerTwo to null" << endl;
+    ownerTwo = nullptr;
+  }  
+  ```
+  
+  After running this program, the output will look like this:
+  
+  ```C++
+  Creating PrintAtDestructor                                                         
+  Creating second owner                                                              
+  Setting ownerOne to null                                                           
+  Setting ownerTwo to null                                                           
+  Deleting PrintAtDestructor  
+  ```
+  
+  Only after setting all the owners to null, is the memory released.
+  
+  Weak pointers
+  
+  Weak is used by pointing to a shared pointer and calling lock, to use whenever needed.
+  But there is no need to save weak pointer, because it is treated more like a discardable copy.
+  
+  Too lazy to explain, here is an example. Best way to see is to copy-paste and run this!
+  If you notice, the lock will fail if the previous owner is null.
+  
+  ```C++
+  class PrintAtDestructor
+  {
+    public:
+      PrintAtDestructor() { cout << "Creating PrintAtDestructor" << endl; }
+      ~PrintAtDestructor() { cout << "Deleting PrintAtDestructor"<< endl; }
+      
+      void printMessage(std::string message)
+      {
+        cout << endl << message << endl;
+      }
+  };
+  
+  int main()
+  {
+    cout << "Creating first shared pointer" << endl;
+    shared_ptr<PrintAtDestructor> ownerOne = make_shared<PrintAtDestructor>();
+    
+    weak_ptr<PrintAtDestructor> weakOwner = ownerOne;
+    
+    if(auto lock = weakOwner.lock())
+    {
+      lock->printMessage("Owner is still alive");    
+    }
+    
+    ownerOne = nullptr;
+    
+    if(auto lock = weakOwner.lock())
+    {
+      lock->printMessage("Owner is still alive");    
+    }
+    else
+    {
+      cout << endl << "Weak owner could not get reference" << endl;   
+    }
+  }
+  ```
+  
+  Even if the ownerOne would be set to null, while weak pointer would have locked and kept that reference,
+  it would still be able to use object, but after it's out of scope, it will be released.

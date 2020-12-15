@@ -64,25 +64,4 @@ int main()
   cout << "Start deleting instance" << endl;
   delete instance;
   cout << "Has deleted instance with id: 90" << endl;
-  
-  // -------------------------------------------------------------------------------
-  // Okay, now the let's think think about this: dynamic allocation, it happens waaaaay more often
-  // If you are new to programming (1 week c++ course doesn't count) let that sink in for a moment.
-  
-  // If you notice the difference, is that to "delete" or "release" a dynamic memory, 
-  // we have to "save an instance", to hold something, to release. You cannot order to release something
-  // you can't hold. That's why you "own" memory and become and owner of it.
-  
-  // Let's create our "own" example, of holding memory and being responsible person.
-  // To avoid calling "delete" everytime
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 }
